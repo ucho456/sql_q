@@ -1,7 +1,20 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+	"os"
+)
 
 func main() {
-	fmt.Println("Hello world")
+	err := http.ListenAndServe(
+		":8080",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "Hello, world!")
+		}),
+	)
+	if err != nil {
+		fmt.Printf("failed to terminate server: %v", err)
+		os.Exit(1)
+	}
 }
