@@ -4,20 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 
 	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-	if err := run(context.Background()); err != nil {
+	l, err := net.Listen("tcp", ":38080")
+	if err != nil {
+		log.Fatalf("failed to listen port: %v", err)
+	}
+
+	if err := run(context.Background(), l); err != nil {
 		fmt.Printf("failed to terminate server: %v", err)
 	}
 }
 
-func run(ctx context.Context) error {
+func run(ctx context.Context, l net.Listener) error {
 	srv := &http.Server{
-		Addr: ":8080",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "Hello world!")
 		}),
@@ -26,7 +31,7 @@ func run(ctx context.Context) error {
 	eg, ctx := errgroup.WithContext(ctx)
 	// 別ゴルーチンでhttpサーバーを起動する
 	eg.Go(func() error {
-		if err := srv.ListenAndServe(); err != nil &&
+		if err := srv.Serve(l); err != nil &&
 			err != http.ErrServerClosed {
 			log.Printf("failed to close: %+v", err)
 			return err
